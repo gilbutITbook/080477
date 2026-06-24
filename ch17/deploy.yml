@@ -1,0 +1,45 @@
+name: Deploy RAG Application
+
+on:
+  push:
+    branches: [ main ]  # ➊ main 브랜치에 푸시되면 실행
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # ➋ 저장소 코드 가져오기
+      - name: Set up Python
+        uses: actions/setup-python@v5  # ➌ 파이썬 환경 구성
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install -r requirements.txt  # ➍ 의존성 설치
+      - name: Run tests
+        run: pytest  # ➎ 테스트 실행
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3  # ➏ Docker Hub 로그인
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5  # ➐ Docker 이미지 빌드 및 업로드
+        with:
+          context: .
+          push: true
+          tags: your-docker-hub/rag-app:latest
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3  # ➑ 운영 서버 배포
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull your-docker-hub/rag-app:latest
+            docker stop rag-app-container || true
+            docker rm rag-app-container || true
+            docker run -d \
+              --name rag-app-container \
+              -p 8000:8000 \
+              your-docker-hub/rag-app:latest

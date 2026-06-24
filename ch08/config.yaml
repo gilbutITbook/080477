@@ -1,0 +1,21 @@
+retriever:
+  db_type: "pgvector"
+
+  db_config:
+    dbname: "vectordb"
+    user: "user"
+    password: "password"
+    host: "localhost"
+    port: 5433
+
+  embedding_model: "text-embedding-3-small"
+  top_k: 50
+
+reranker:
+  model_name: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  top_n: 5
+
+generator:
+  model_name: "gpt-4o-mini"
+  temperature: 0.1
+  llm_type: "openai"
